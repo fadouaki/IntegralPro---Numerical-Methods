@@ -1,13 +1,7 @@
 package com.example.integralpro.domain
 
-class IntegrationUseCase {
-    fun calculate(function: (Double) -> Double, start: Double, end: Double, steps: Int): Double {
-        val stepSize = (end - start) / steps
-        var sum = 0.5 * (function(start) + function(end))
-        for (i in 1 until steps) {
-            val x = start + i * stepSize
-            sum += function(x)
-        }
-        return sum * stepSize
+class IntegrationUseCase(private val integrator: NumericalIntegrator) {
+    fun execute(method: IntegrationMethod, expression: String, start: Double, end: Double, steps: Int): Double {
+        return integrator.calculate(method, expression, start, end, steps)
     }
 }
