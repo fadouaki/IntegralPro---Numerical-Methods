@@ -3,6 +3,7 @@ package com.example.integralpro.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ fun IntegralVisualizer(
             0.0
         }
     }
+
+    val axisColor = MaterialTheme.colorScheme.onSurface
 
     Canvas(modifier = modifier
         .fillMaxWidth()
@@ -89,17 +92,6 @@ fun IntegralVisualizer(
 
         for (i in 0 until n step drawStep) {
             val xi = a + i * h
-            // For visualization, if we skip steps, we width should cover the skipped steps for visual continuity
-            // or just draw the representative slice. Let's draw representative slice for accuracy of "method" visual.
-            // Actually, if we skip, we should probably just draw that one slice width 'h' but it will leave gaps.
-            // Better approach: if n is huge, we just don't draw individual rectangles, maybe just fill area.
-            // But for simplicity of this task, let's keep drawing slice width 'h' but only every 'drawStep' one?
-            // No, that looks bad.
-            // Better: Effectively increase 'h' for visualization purposes if n is too large?
-            // Or just limit the loop count and adjust width.
-            // Let's stick to strict downsampling: only draw every kth rectangle. Gaps are acceptable to show "discrete" nature or we assume they are dense enough.
-            // Actually, if n > 200, the rectangles are < 1-2 pixels wide on a phone. The gaps won't be huge.
-
             val xi1 = a + (i + 1) * h
 
             val xStart = mapX(xi)
@@ -156,7 +148,7 @@ fun IntegralVisualizer(
         val yZero = mapY(0.0)
         if (yZero in 0f..height) {
             drawLine(
-                color = Color.Black,
+                color = axisColor,
                 start = Offset(0f, yZero),
                 end = Offset(width, yZero),
                 strokeWidth = 2f

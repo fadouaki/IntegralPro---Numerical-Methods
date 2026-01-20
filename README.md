@@ -30,7 +30,6 @@
 - **Visualization**: Canvas-based drawing of the function curve and approximation shapes (rectangles/trapezoids).
 - **History**: Automatically saves calculation history using a local database.
 - **Comparisons**: View past results to compare accuracy between methods.
-- **Sharing**: Export results as text to other apps.
 - **Dark Mode**: Fully supports system dark theme.
 - **Haptic Feedback**: Tactile response for interactions.
 - **Help Guide**: In-app explanations for each numerical method.
@@ -88,7 +87,6 @@ IntegralPro implements the following numerical integration algorithms:
 6.  **View Result**:
     - See the numeric approximation.
     - Visualize the area under the curve.
-    - Tap **Share** to send the result.
     - Tap **History** to see previous calculations.
 
 ### Example
