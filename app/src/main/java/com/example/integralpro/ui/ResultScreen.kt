@@ -1,6 +1,5 @@
 package com.example.integralpro.ui
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,7 +39,8 @@ fun ResultScreen(
     method: IntegrationMethod,
     result: Double,
     onCalculateAgain: () -> Unit,
-    onViewHistory: () -> Unit
+    onViewHistory: () -> Unit,
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -49,24 +49,12 @@ fun ResultScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Result") },
-                actions = {
-                    IconButton(onClick = {
-                        val shareText = """
-                            Integral Result:
-                            Function: $expression
-                            Bounds: [$a, $b]
-                            Result: ${String.format(Locale.US, "%.4f", result)}
-                            Method: ${method::class.simpleName} (n=$n)
-                        """.trimIndent()
-                        val sendIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, shareText)
-                            type = "text/plain"
-                        }
-                        val shareIntent = Intent.createChooser(sendIntent, null)
-                        context.startActivity(shareIntent)
-                    }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share Result")
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )

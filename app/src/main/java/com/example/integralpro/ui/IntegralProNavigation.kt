@@ -52,6 +52,9 @@ fun IntegralProApp(viewModel: MainViewModel = viewModel(factory = MainViewModel.
                     },
                     onViewHistory = {
                         navController.navigate(Screen.History.route)
+                    },
+                    onBack = {
+                        navController.popBackStack()
                     }
                 )
             }
