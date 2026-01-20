@@ -2,15 +2,23 @@ package com.example.integralpro.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.room.Room
+import com.example.integralpro.data.HistoryRepository
+import com.example.integralpro.data.local.AppDatabase
+import com.example.integralpro.data.local.CalculationHistory
+import com.example.integralpro.domain.GetHistoryUseCase
 import com.example.integralpro.domain.IntegrationMethod
 import com.example.integralpro.domain.IntegrationUseCase
 import com.example.integralpro.domain.NumericalIntegrator
+import com.example.integralpro.domain.SaveResultUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class MainUiState(
     val functionInput: String = "x^2",
@@ -22,10 +30,16 @@ data class MainUiState(
     val error: String? = null
 )
 
-class MainViewModel(private val useCase: IntegrationUseCase) : ViewModel() {
+class MainViewModel(
+    private val useCase: IntegrationUseCase,
+    private val saveResultUseCase: SaveResultUseCase,
+    private val getHistoryUseCase: GetHistoryUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    val history = getHistoryUseCase.execute()
 
     fun updateFunctionInput(input: String) {
         _uiState.update { it.copy(functionInput = input, result = null, error = null) }
@@ -79,6 +93,18 @@ class MainViewModel(private val useCase: IntegrationUseCase) : ViewModel() {
                 n
             )
             _uiState.update { it.copy(result = result, error = null) }
+
+            viewModelScope.launch {
+                saveResultUseCase.execute(
+                    expression = currentState.functionInput,
+                    a = a,
+                    b = b,
+                    n = n,
+                    method = currentState.selectedMethod,
+                    result = result
+                )
+            }
+
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message ?: "Unknown error") }
         }
@@ -87,9 +113,20 @@ class MainViewModel(private val useCase: IntegrationUseCase) : ViewModel() {
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
+                val context = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY
+                val app = this[context]!!
+                val db = Room.databaseBuilder(
+                    app.applicationContext,
+                    AppDatabase::class.java, "integral-pro-db"
+                ).build()
+                val repository = HistoryRepository(db.historyDao())
+
                 val integrator = NumericalIntegrator()
                 val useCase = IntegrationUseCase(integrator)
-                MainViewModel(useCase)
+                val saveResultUseCase = SaveResultUseCase(repository)
+                val getHistoryUseCase = GetHistoryUseCase(repository)
+
+                MainViewModel(useCase, saveResultUseCase, getHistoryUseCase)
             }
         }
     }

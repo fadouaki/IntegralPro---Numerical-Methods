@@ -3,13 +3,10 @@ package com.example.integralpro.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -18,11 +15,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,13 +31,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.integralpro.domain.IntegrationMethod
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel = viewModel(factory = MainViewModel.Factory)) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    onCalculateSuccess: () -> Unit,
+    onViewHistory: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
@@ -116,22 +114,28 @@ fun MainScreen(viewModel: MainViewModel = viewModel(factory = MainViewModel.Fact
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // Calculate Button
-            Button(
-                onClick = viewModel::calculate,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Calculate")
+            // Buttons
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Button(
+                    onClick = {
+                        viewModel.calculate()
+                        if (viewModel.uiState.value.result != null) {
+                            onCalculateSuccess()
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Calculate")
+                }
+
+                OutlinedButton(
+                    onClick = onViewHistory,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("History")
+                }
             }
 
-            // Result
-            if (uiState.result != null) {
-                Text(
-                    text = "Result: ${uiState.result}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
 
             // Error
             if (uiState.error != null) {
