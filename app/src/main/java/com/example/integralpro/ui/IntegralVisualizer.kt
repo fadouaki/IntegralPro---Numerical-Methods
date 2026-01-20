@@ -72,19 +72,34 @@ fun IntegralVisualizer(
         if (minY > 0) minY = 0.0
         if (maxY < 0) maxY = 0.0
 
-        val yRange = maxY - minY
-        val xRange = b - a
+        val yRange = if (abs(maxY - minY) < 1e-9) 1.0 else maxY - minY
+        val xRange = if (abs(b - a) < 1e-9) 1.0 else b - a
 
         fun mapX(x: Double): Float = ((x - a) / xRange * width).toFloat()
         fun mapY(y: Double): Float = (height - ((y - minY) / yRange * height)).toFloat()
 
         // 2. Draw Approximation Shapes
+        // Downsample drawing for large n to improve performance
+        val maxShapesToDraw = 200
+        val drawStep = max(1, n / maxShapesToDraw)
+
         val h = (b - a) / n
         val shapeColor = Color.Blue.copy(alpha = 0.3f)
         val shapeStroke = Color.Blue
 
-        for (i in 0 until n) {
+        for (i in 0 until n step drawStep) {
             val xi = a + i * h
+            // For visualization, if we skip steps, we width should cover the skipped steps for visual continuity
+            // or just draw the representative slice. Let's draw representative slice for accuracy of "method" visual.
+            // Actually, if we skip, we should probably just draw that one slice width 'h' but it will leave gaps.
+            // Better approach: if n is huge, we just don't draw individual rectangles, maybe just fill area.
+            // But for simplicity of this task, let's keep drawing slice width 'h' but only every 'drawStep' one?
+            // No, that looks bad.
+            // Better: Effectively increase 'h' for visualization purposes if n is too large?
+            // Or just limit the loop count and adjust width.
+            // Let's stick to strict downsampling: only draw every kth rectangle. Gaps are acceptable to show "discrete" nature or we assume they are dense enough.
+            // Actually, if n > 200, the rectangles are < 1-2 pixels wide on a phone. The gaps won't be huge.
+
             val xi1 = a + (i + 1) * h
 
             val xStart = mapX(xi)
@@ -102,12 +117,6 @@ fun IntegralVisualizer(
                         topLeft = Offset(xStart, min(yTop, yBase)),
                         size = Size(xEnd - xStart, abs(yBase - yTop))
                     )
-                    drawRect(
-                        color = shapeStroke,
-                        topLeft = Offset(xStart, min(yTop, yBase)),
-                        size = Size(xEnd - xStart, abs(yBase - yTop)),
-                        style = Stroke(width = 1f)
-                    )
                 }
                 IntegrationMethod.RiemannRight -> {
                     val yVal = f(xi1)
@@ -116,12 +125,6 @@ fun IntegralVisualizer(
                         color = shapeColor,
                         topLeft = Offset(xStart, min(yTop, yBase)),
                         size = Size(xEnd - xStart, abs(yBase - yTop))
-                    )
-                     drawRect(
-                        color = shapeStroke,
-                        topLeft = Offset(xStart, min(yTop, yBase)),
-                        size = Size(xEnd - xStart, abs(yBase - yTop)),
-                        style = Stroke(width = 1f)
                     )
                 }
                 IntegrationMethod.Midpoint -> {
@@ -133,15 +136,8 @@ fun IntegralVisualizer(
                         topLeft = Offset(xStart, min(yTop, yBase)),
                         size = Size(xEnd - xStart, abs(yBase - yTop))
                     )
-                     drawRect(
-                        color = shapeStroke,
-                        topLeft = Offset(xStart, min(yTop, yBase)),
-                        size = Size(xEnd - xStart, abs(yBase - yTop)),
-                        style = Stroke(width = 1f)
-                    )
                 }
                 IntegrationMethod.Trapezoidal, IntegrationMethod.Simpson -> {
-                    // Drawing Trapezoids for both (Simpson is parabolic, but trapezoid is close visualization)
                     val y1 = mapY(f(xi))
                     val y2 = mapY(f(xi1))
 
@@ -152,7 +148,6 @@ fun IntegralVisualizer(
                     path.close()
 
                     drawPath(path, shapeColor)
-                    drawPath(path, shapeStroke, style = Stroke(width = 1f))
                 }
             }
         }

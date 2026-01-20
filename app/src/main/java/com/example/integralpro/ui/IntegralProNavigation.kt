@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     data object Input : Screen("input")
     data object Result : Screen("result")
     data object History : Screen("history")
+    data object Help : Screen("help")
 }
 
 @Composable
@@ -30,6 +31,9 @@ fun IntegralProApp(viewModel: MainViewModel = viewModel(factory = MainViewModel.
                 },
                 onViewHistory = {
                     navController.navigate(Screen.History.route)
+                },
+                onViewHelp = {
+                    navController.navigate(Screen.Help.route)
                 }
             )
         }
@@ -55,6 +59,13 @@ fun IntegralProApp(viewModel: MainViewModel = viewModel(factory = MainViewModel.
         composable(Screen.History.route) {
             HistoryScreen(
                 history = history,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(Screen.Help.route) {
+            HelpScreen(
                 onBack = {
                     navController.popBackStack()
                 }

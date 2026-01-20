@@ -1,15 +1,21 @@
 package com.example.integralpro.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -17,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.example.integralpro.domain.IntegrationMethod
 import java.util.Locale
@@ -33,9 +42,34 @@ fun ResultScreen(
     onCalculateAgain: () -> Unit,
     onViewHistory: () -> Unit
 ) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Result") })
+            TopAppBar(
+                title = { Text("Result") },
+                actions = {
+                    IconButton(onClick = {
+                        val shareText = """
+                            Integral Result:
+                            Function: $expression
+                            Bounds: [$a, $b]
+                            Result: ${String.format(Locale.US, "%.4f", result)}
+                            Method: ${method::class.simpleName} (n=$n)
+                        """.trimIndent()
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(sendIntent, null)
+                        context.startActivity(shareIntent)
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share Result")
+                    }
+                }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -80,7 +114,10 @@ fun ResultScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Button(
-                    onClick = onCalculateAgain,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onCalculateAgain()
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Calculate Again")
