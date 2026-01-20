@@ -8,15 +8,17 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.room.Room
 import com.example.integralpro.data.HistoryRepository
 import com.example.integralpro.data.local.AppDatabase
-import com.example.integralpro.data.local.CalculationHistory
 import com.example.integralpro.domain.GetHistoryUseCase
 import com.example.integralpro.domain.IntegrationMethod
 import com.example.integralpro.domain.IntegrationUseCase
 import com.example.integralpro.domain.NumericalIntegrator
 import com.example.integralpro.domain.SaveResultUseCase
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,6 +32,10 @@ data class MainUiState(
     val error: String? = null
 )
 
+sealed class MainUiEvent {
+    data object CalculationSuccess : MainUiEvent()
+}
+
 class MainViewModel(
     private val useCase: IntegrationUseCase,
     private val saveResultUseCase: SaveResultUseCase,
@@ -38,6 +44,9 @@ class MainViewModel(
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    private val _uiEvent = Channel<MainUiEvent>()
+    val uiEvent: Flow<MainUiEvent> = _uiEvent.receiveAsFlow()
 
     val history = getHistoryUseCase.execute()
 
@@ -84,17 +93,17 @@ class MainViewModel(
              return
         }
 
-        try {
-            val result = useCase.execute(
-                currentState.selectedMethod,
-                currentState.functionInput,
-                a,
-                b,
-                n
-            )
-            _uiState.update { it.copy(result = result, error = null) }
+        viewModelScope.launch {
+            try {
+                val result = useCase.execute(
+                    currentState.selectedMethod,
+                    currentState.functionInput,
+                    a,
+                    b,
+                    n
+                )
+                _uiState.update { it.copy(result = result, error = null) }
 
-            viewModelScope.launch {
                 saveResultUseCase.execute(
                     expression = currentState.functionInput,
                     a = a,
@@ -103,10 +112,12 @@ class MainViewModel(
                     method = currentState.selectedMethod,
                     result = result
                 )
-            }
 
-        } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "Unknown error") }
+                _uiEvent.send(MainUiEvent.CalculationSuccess)
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message ?: "Unknown error") }
+            }
         }
     }
 

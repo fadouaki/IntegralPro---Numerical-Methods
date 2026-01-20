@@ -28,6 +28,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,16 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is MainUiEvent.CalculationSuccess -> {
+                    onCalculateSuccess()
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -150,9 +161,6 @@ fun MainScreen(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.calculate()
-                        if (viewModel.uiState.value.result != null) {
-                            onCalculateSuccess()
-                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {
