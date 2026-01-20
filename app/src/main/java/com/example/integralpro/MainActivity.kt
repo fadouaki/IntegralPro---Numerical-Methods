@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.integralpro.ui.MainScreen
+import com.example.integralpro.ui.MainViewModel
 import com.example.integralpro.ui.theme.IntegralProTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +22,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    val viewModel: MainViewModel = viewModel(factory = MainViewModel.Factory)
+                    MainScreen(viewModel = viewModel)
                 }
             }
         }
